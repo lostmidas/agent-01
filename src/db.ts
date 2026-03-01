@@ -22,7 +22,13 @@ export type LogType =
 export async function log(
   type: LogType,
   content: string,
-  extra?: { raw_data?: unknown; job_id?: string; thread_id?: string }
+  extra?: {
+    raw_data?: unknown;
+    job_id?: string;
+    thread_id?: string;
+    agent_id?: string;
+    battle_id?: string;
+  }
 ) {
   const { error } = await db.from("agent_logs").insert({
     type,
@@ -30,6 +36,8 @@ export async function log(
     raw_data: extra?.raw_data ?? null,
     job_id: extra?.job_id ?? null,
     thread_id: extra?.thread_id ?? null,
+    agent_id: extra?.agent_id ?? null,
+    battle_id: extra?.battle_id ?? null,
   });
   if (error) console.error("[db] Failed to log:", error.message);
 }
@@ -43,6 +51,8 @@ export async function insertTrade(trade: {
   job_id?: string;
   tx_hash?: string;
   raw_response?: unknown;
+  agent_id?: string;
+  battle_id?: string;
 }) {
   const { data, error } = await db
     .from("trades")
@@ -55,6 +65,8 @@ export async function insertTrade(trade: {
       job_id: trade.job_id ?? null,
       tx_hash: trade.tx_hash ?? null,
       raw_response: trade.raw_response ?? null,
+      agent_id: trade.agent_id ?? null,
+      battle_id: trade.battle_id ?? null,
     })
     .select()
     .single();
@@ -71,8 +83,15 @@ export async function updateTrade(
   if (error) console.error("[db] Failed to update trade:", error.message);
 }
 
-export async function insertBalance(total_usd: number, breakdown: Record<string, number>) {
-  const { error } = await db.from("balances").insert({ total_usd, breakdown });
+export async function insertBalance(
+  total_usd: number,
+  breakdown: Record<string, number>,
+  agent_id?: string,
+  battle_id?: string
+) {
+  const { error } = await db
+    .from("balances")
+    .insert({ total_usd, breakdown, agent_id: agent_id ?? null, battle_id: battle_id ?? null });
   if (error) console.error("[db] Failed to insert balance:", error.message);
 }
 

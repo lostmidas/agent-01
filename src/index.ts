@@ -18,6 +18,8 @@ const INTERVAL_MS = parseInt(process.env.AGENT_INTERVAL_MS || "180000", 10);
 const AGENT_DRY_RUN = /^(1|true|yes)$/i.test(process.env.AGENT_DRY_RUN || "false");
 const AGENT_TRADE_AMOUNT = process.env.AGENT_TRADE_AMOUNT || "10";
 const API_TIMEOUT_MS = 30_000;
+const AGENT_ID = process.env.AGENT_ID;
+const BATTLE_ID = process.env.BATTLE_ID;
 
 let running = true;
 
@@ -65,11 +67,18 @@ async function init() {
       console.error("[agent] Invalid Bankr API key. Set BANKR_API_KEY env var.");
       process.exit(1);
     }
-    await log("system", "Agent starting up — validating API key...");
+    await log("system", "Agent starting up — validating API key...", {
+      agent_id: AGENT_ID,
+      battle_id: BATTLE_ID,
+    });
     console.log("[agent] Init step: fetch user info");
     const userInfo = await callBankrApi("bankr.getUserInfo", () => getUserInfo());
     const wallet = userInfo.wallets?.find((w: { chain: string }) => w.chain === "base") ?? userInfo.wallets?.[0];
-    await log("system", `Connected: ${wallet?.address?.slice(0, 6)}...${wallet?.address?.slice(-4)} on ${wallet?.chain ?? "unknown"}`, { raw_data: userInfo });
+    await log(
+      "system",
+      `Connected: ${wallet?.address?.slice(0, 6)}...${wallet?.address?.slice(-4)} on ${wallet?.chain ?? "unknown"}`,
+      { raw_data: userInfo, agent_id: AGENT_ID, battle_id: BATTLE_ID }
+    );
     console.log(`[agent] Wallet: ${wallet?.address}`);
     console.log(`[agent] Cycle interval: ${INTERVAL_MS}ms`);
     console.log("[agent] Init complete");
@@ -87,27 +96,46 @@ async function cycle() {
   const ctx: { threadId?: string } = {};
   try {
     if (isDailyLimitHit()) {
-      await log("trade", "Daily loss limit hit, pausing trading");
+      await log("trade", "Daily loss limit hit, pausing trading", {
+        agent_id: AGENT_ID,
+        battle_id: BATTLE_ID,
+      });
       return;
     }
-    await log("scanning", "Starting new RSI scan cycle...");
+    await log("scanning", "Starting new RSI scan cycle...", {
+      agent_id: AGENT_ID,
+      battle_id: BATTLE_ID,
+    });
     const tokens = await scanTrends(ctx);
     if (tokens.length === 0) {
-      await log("analysis", "No trending tokens found, skipping cycle.");
+      await log("analysis", "No trending tokens found, skipping cycle.", {
+        agent_id: AGENT_ID,
+        battle_id: BATTLE_ID,
+      });
       return;
     }
     for (const token of tokens) {
       const { signal, rsi } = await getRSIForToken(ctx, token);
       if (signal === "BUY") {
         if (isTokenInCooldown(token)) {
-          await log("trade", `${token} in cooldown, skipping`);
+          await log("trade", `${token} in cooldown, skipping`, {
+            agent_id: AGENT_ID,
+            battle_id: BATTLE_ID,
+          });
           continue;
         }
         if (AGENT_DRY_RUN) {
-          await log("trade", `[DRY RUN] BUY signal for ${token} at RSI ${rsi.toFixed(2)} — skipping trade.`);
+          await log(
+            "trade",
+            `[DRY RUN] BUY signal for ${token} at RSI ${rsi.toFixed(2)} — skipping trade.`,
+            { agent_id: AGENT_ID, battle_id: BATTLE_ID }
+          );
         } else {
           if (hasReachedMaxPositions()) {
-            await log("trade", `Max positions reached, skipping BUY for ${token}`);
+            await log("trade", `Max positions reached, skipping BUY for ${token}`, {
+              agent_id: AGENT_ID,
+              battle_id: BATTLE_ID,
+            });
             continue;
           }
           const result = await executeTrade(ctx, { amountIn: AGENT_TRADE_AMOUNT, tokenIn: "USDC", tokenOut: token });
@@ -118,11 +146,18 @@ async function cycle() {
         }
       } else if (signal === "SELL") {
         if (isTokenInCooldown(token)) {
-          await log("trade", `${token} in cooldown, skipping`);
+          await log("trade", `${token} in cooldown, skipping`, {
+            agent_id: AGENT_ID,
+            battle_id: BATTLE_ID,
+          });
           continue;
         }
         if (AGENT_DRY_RUN) {
-          await log("trade", `[DRY RUN] SELL signal for ${token} at RSI ${rsi.toFixed(2)} — skipping trade.`);
+          await log(
+            "trade",
+            `[DRY RUN] SELL signal for ${token} at RSI ${rsi.toFixed(2)} — skipping trade.`,
+            { agent_id: AGENT_ID, battle_id: BATTLE_ID }
+          );
         } else {
           const result = await executeTrade(ctx, { amountIn: AGENT_TRADE_AMOUNT, tokenIn: token, tokenOut: "USDC" });
           if (result) {
@@ -131,7 +166,10 @@ async function cycle() {
           }
         }
       } else {
-        await log("analysis", `${token} RSI ${rsi.toFixed(2)} — holding, no trade.`);
+        await log("analysis", `${token} RSI ${rsi.toFixed(2)} — holding, no trade.`, {
+          agent_id: AGENT_ID,
+          battle_id: BATTLE_ID,
+        });
       }
     }
     await checkBalance(ctx);
@@ -140,7 +178,12 @@ async function cycle() {
     const stack = err instanceof Error ? err.stack : undefined;
     console.error("[agent] ERROR: " + message);
     if (stack) console.error(stack);
-    await log("error", `Cycle error: ${message}`, { raw_data: { error: message }, thread_id: ctx.threadId });
+    await log("error", `Cycle error: ${message}`, {
+      raw_data: { error: message },
+      thread_id: ctx.threadId,
+      agent_id: AGENT_ID,
+      battle_id: BATTLE_ID,
+    });
   }
 }
 
@@ -155,12 +198,18 @@ async function main() {
 
 process.on("SIGINT", () => {
   running = false;
-  log("system", "Agent shutting down (SIGINT)").then(() => process.exit(0));
+  log("system", "Agent shutting down (SIGINT)", {
+    agent_id: AGENT_ID,
+    battle_id: BATTLE_ID,
+  }).then(() => process.exit(0));
 });
 
 process.on("SIGTERM", () => {
   running = false;
-  log("system", "Agent shutting down (SIGTERM)").then(() => process.exit(0));
+  log("system", "Agent shutting down (SIGTERM)", {
+    agent_id: AGENT_ID,
+    battle_id: BATTLE_ID,
+  }).then(() => process.exit(0));
 });
 
 main().catch((err) => {
