@@ -8,6 +8,7 @@ import {
   checkBalance,
   MAX_TRADE_PCT,
 } from "./strategy.js";
+import { startSelfImprovementCron } from "./cron/index.js";
 
 const INTERVAL_MS = parseInt(process.env.AGENT_INTERVAL_MS || "180000", 10);
 const AGENT_DRY_RUN = /^(1|true|yes)$/i.test(process.env.AGENT_DRY_RUN || "false");
@@ -140,6 +141,7 @@ async function cycle() {
 
 async function main() {
   await init();
+  startSelfImprovementCron();
   while (running) {
     await cycle();
     console.log(`[agent] Sleeping ${INTERVAL_MS / 1000}s until next cycle...`);
