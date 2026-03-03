@@ -1,6 +1,6 @@
 import "./env.js";
 import { validateApiKey, getUserInfo } from "@bankr/cli";
-import { log } from "./db.js";
+import { log, getLatestTokensToWatch } from "./db.js";
 import {
   scanTrends,
   decideAndTrade,
@@ -97,7 +97,9 @@ async function cycle() {
       agent_id: AGENT_ID,
       battle_id: BATTLE_ID,
     });
-    const analysis = await scanTrends(ctx);
+    const tokensToWatch =
+      AGENT_ID && BATTLE_ID ? await getLatestTokensToWatch(AGENT_ID, BATTLE_ID) : [];
+    const analysis = await scanTrends(ctx, tokensToWatch);
     const { totalUsd, breakdown, amounts } = await checkBalance(ctx);
     const trades = decideAndTrade(ctx, analysis, totalUsd, breakdown, amounts);
     const sells = trades.filter((t) => t.tokenIn !== "USDC");
