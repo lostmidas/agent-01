@@ -117,7 +117,7 @@ async function cycle() {
       }
     } else {
       for (const t of sells) {
-        await executeTrade(ctx, t, completedTradeCount);
+        await executeTrade(ctx, t);
         completedTradeCount++;
         if (completedTradeCount % 3 === 0) void fireReaction(ctx, t);
       }
@@ -127,7 +127,7 @@ async function cycle() {
         const usdcBalance = newBreakdown["USDC"] ?? 0;
         if (usdcBalance >= parseFloat(buyAmount)) {
           const buyTrade = { amountIn: buyAmount, tokenIn: "USDC", tokenOut: buy.tokenOut };
-          await executeTrade(ctx, buyTrade, completedTradeCount);
+          await executeTrade(ctx, buyTrade);
           completedTradeCount++;
           if (completedTradeCount % 3 === 0) void fireReaction(ctx, buyTrade);
         }

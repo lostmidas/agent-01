@@ -156,8 +156,7 @@ export function decideAndTrade(
 
 export async function executeTrade(
   ctx: CycleContext,
-  trade: { amountIn: string; tokenIn: string; tokenOut: string },
-  completedTradeCount?: number
+  trade: { amountIn: string; tokenIn: string; tokenOut: string }
 ) {
   await log("trade", "Executing swap: " + trade.amountIn + " " + trade.tokenIn + " to " + trade.tokenOut, {
     thread_id: ctx.threadId,
