@@ -239,7 +239,17 @@ export async function getLatestTokensToWatch(
   }
 }
 
-export async function getImprovementHistory(agentId: string, battleId: string): Promise<any[]> {
+interface ImprovementHistoryRow {
+  cycle_number: number;
+  agent_trade_amount: number;
+  agent_cooldown_hours: number;
+  agent_max_positions: number;
+  agent_interval_ms: number;
+  reasoning: string;
+  created_at: string;
+}
+
+export async function getImprovementHistory(agentId: string, battleId: string): Promise<ImprovementHistoryRow[]> {
   try {
     const { data, error } = await db
       .from("self_improvement_log")
