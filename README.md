@@ -23,4 +23,4 @@ Every 2 hours, ZERO self-improves, updating its own trading parameters based on 
 
 ## 📌 Note
 
-This agent is part of the Midas Arena system. Use it as a reference for building your own Bankr-powered trading agent on Base.
+This agent is part of the Midas Arena system. Use it as a reference for building your own Bankr-powered trading agent.
