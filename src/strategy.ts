@@ -84,7 +84,7 @@ export async function scanTrends(
   await log("scanning", "Scanning trending tokens on Base...");
 
   let prompt =
-    "What tokens are trending on Base right now? Analyze the top movers, their momentum, and any notable signals. Give me your top 3 picks with conviction levels (high/medium/low). Format each as: TOKEN_SYMBOL - direction (up/down) - conviction (high/medium/low) - brief reason.";
+    "What tokens on Base are showing weakness or downward momentum right now? Look for tokens that are oversold, declining, or showing bearish signals — these are contrarian buying opportunities. Give me your top 3 picks with conviction levels. Format each as: TOKEN_SYMBOL - direction (up/down) - conviction (high/medium/low) - brief reason.";
   if (tokensToWatch && tokensToWatch.length > 0) {
     prompt += ` Pay special attention to these tokens from your previous analysis: ${tokensToWatch.join(", ")}. Include them in your assessment if they show relevant signals.`;
   }
@@ -134,7 +134,7 @@ export function decideAndTrade(
     const pick = picksByToken.get(tokenUpper);
     const shouldSell = !pick || pick.direction === "up";
     if (shouldSell) {
-      const sellUsd = Math.max(0.50, (usdValue * MAX_TRADE_PCT) / 100);
+      const sellUsd = usdValue;
       trades.push({
         amountIn: `$${sellUsd.toFixed(2)}`,
         tokenIn: tokenUpper,
@@ -249,17 +249,22 @@ export async function checkBalance(ctx: CycleContext) {
   const breakdown: Record<string, number> = {};
   const amounts: Record<string, number> = {};
   let totalUsd = 0;
-  const lineRegex = /([\d,.]+) (\w+) \(\$([\d,.]+)\)/g;
+  const seen = new Set<string>();
+  const lineRegex = /^.+\$\s*([\d,.]+)/gm;
   let balMatch;
   while ((balMatch = lineRegex.exec(result.response)) !== null) {
-    const amount = parseFloat(balMatch[1].replace(/,/g, ""));
-    const symbol = balMatch[2].toUpperCase();
-    const usdValue = parseFloat(balMatch[3].replace(/,/g, ""));
-    if (!isNaN(usdValue) && usdValue > 0) {
+    const raw = balMatch[1];
+    if (seen.has(raw)) continue;
+    seen.add(raw);
+    const usdValue = parseFloat(raw.replace(/,/g, ""));
+    if (!isNaN(usdValue) && usdValue > 0.01 && usdValue < 10000) {
       totalUsd += usdValue;
-      breakdown[symbol] = usdValue;
-      amounts[symbol] = amount;
     }
+  }
+
+  if (totalUsd === 0) {
+    console.warn('[balance] parsed zero balance, skipping insert');
+    return { totalUsd, breakdown, amounts };
   }
 
   await insertBalance(totalUsd, breakdown, ctx.agentId, ctx.battleId);
@@ -277,7 +282,7 @@ export async function fireReaction(
 ): Promise<void> {
   const prompt = ZERO_REACTION_PROMPT(trade);
   try {
-    const result = await promptAndPoll(prompt, ctx.threadId, "Firing post-trade reaction...");
+    const result = await promptAndPoll(prompt, undefined, "Firing post-trade reaction...");
     await log("taunt", result.response.trim(), {
       agent_id: ctx.agentId,
       battle_id: ctx.battleId,
