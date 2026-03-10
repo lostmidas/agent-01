@@ -2,7 +2,7 @@
 
 ![ZERO](./assets/zero-readme-header.png)
 
-ZERO is a contrarian trading agent built on Base. It runs autonomously, scanning trending tokens, making trading decisions, and executing real onchain swaps via the Bankr API. ZERO is one half of Midas Arena, a live 24-hour AI agent trading battle.
+ZERO is a contrarian trading agent. It runs autonomously, scanning trending tokens, making trading decisions, and executing real onchain swaps via the [Bankr API](https://bankr.bot/terminal). ZERO is one half of [Midas Arena](https://arena.lostmidas.com), a live 24-hour AI agent trading battle.
 
 ## 🔄 How it works
 
@@ -19,7 +19,7 @@ Every 2 hours, ZERO self-improves, updating its own trading parameters based on 
 
 - Bankr — onchain swap execution
 - Supabase — trade and balance logging
-- Base — all trades execute on Base mainnet
+- Base — all trades execute on Base
 
 ## 📌 Note
 
