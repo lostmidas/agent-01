@@ -92,7 +92,7 @@ export async function scanTrends(
   await log("scanning", "Scanning trending tokens on Base...");
 
   let prompt =
-    "What tokens on Base are showing weakness or downward momentum right now? Look for tokens that are oversold, declining, or showing bearish signals — these are contrarian buying opportunities. Give me your top 3 picks with conviction levels. Format each as: TOKEN_SYMBOL - direction (up/down) - conviction (high/medium/low) - brief reason.";
+    "You are scanning a fixed universe of high-volatility Bankr ecosystem tokens on Base. The only tokens you may analyze and trade are: MOLT, NOOK, JUNO, FELIX, CLAWD, BNKR. Do not suggest or trade any tokens outside this list. Which of these tokens are showing weakness or downward momentum right now? Look for tokens that are oversold, declining, or showing bearish signals — these are contrarian buying opportunities. Give me your top 3 picks from this list only, with conviction levels. Format each as: TOKEN_SYMBOL - direction (up/down) - conviction (high/medium/low) - brief reason.";
   if (tokensToWatch && tokensToWatch.length > 0) {
     prompt += ` Pay special attention to these tokens from your previous analysis: ${tokensToWatch.join(", ")}. Include them in your assessment if they show relevant signals.`;
   }
