@@ -1,7 +1,6 @@
 import { submitPrompt, pollJob } from "@bankr/cli";
-import { log, insertTrade, updateTrade, insertBalance } from "./db.js";
+import { log, insertTrade, updateTrade, insertBalance, getEntryPrice } from "./db.js";
 import { ZERO_REACTION_PROMPT } from "./prompts.js";
-import { getEntryPrice } from "./db.js";
 
 const API_TIMEOUT_MS = 30_000;
 const POLL_JOB_TIMEOUT_MS = 300_000;
