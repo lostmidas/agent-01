@@ -54,6 +54,7 @@ export async function insertTrade(trade: {
   raw_response?: unknown;
   agent_id?: string;
   battle_id?: string;
+  entry_price_usd?: number;
 }) {
   const { data, error } = await db
     .from("trades")
@@ -68,6 +69,7 @@ export async function insertTrade(trade: {
       raw_response: trade.raw_response ?? null,
       agent_id: trade.agent_id ?? null,
       battle_id: trade.battle_id ?? null,
+      entry_price_usd: trade.entry_price_usd ?? null,
     })
     .select()
     .single();
@@ -416,5 +418,33 @@ export async function insertSelfImprovementLog(entry: {
     }
   } catch (err) {
     console.error("[db] insertSelfImprovementLog unexpected error:", err);
+  }
+}
+
+export async function getEntryPrice(
+  agentId: string,
+  battleId: string,
+  token: string
+): Promise<number | null> {
+  try {
+    const { data, error } = await db
+      .from("trades")
+      .select("entry_price_usd")
+      .eq("agent_id", agentId)
+      .eq("battle_id", battleId)
+      .eq("token_out", token)
+      .eq("status", "completed")
+      .not("entry_price_usd", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error("[db] getEntryPrice error:", error.message);
+      return null;
+    }
+    return data?.entry_price_usd ?? null;
+  } catch (err) {
+    console.error("[db] getEntryPrice unexpected error:", err);
+    return null;
   }
 }
